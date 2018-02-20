@@ -4,17 +4,18 @@ from copy import copy
 
 class Pool:
 
-    def __init__(self, graph, n, start, end):
+    def __init__(self, graph, popsize, mut_rate, start, end):
         self.graph = graph
-        self.n = n
+        self.popsize = popsize
         self.paths = []
         self.start = start
         self.end = end
+        self.mut_rate = mut_rate
         self.solution = None
         self.max = 0
 
     def generate_initial_population(self):
-        for i in range(self.n):
+        for i in range(self.popsize):
             new_path = Path(self.graph.get_random_path(self.start, self.end, bsearch = True))
             self.paths.append(new_path)
 
@@ -37,13 +38,18 @@ class Pool:
         while r > 0:
             r -= self.paths[index].prob
             index += 1
-        return self.paths[index-1].nodes
+
+        new_path = Path(self.paths[index-1].nodes)
+        new_path.normalize_score = self.paths[index-1].normalize_score
+        new_path.prob = self.paths[index-1].prob
+
+        return new_path
 
     def generate_new_population(self):
         news_paths = []
-        for i in range(self.n):
-            new_path = Path(copy(self.pick_one()))
-            new_path = self.graph.mutate_path(new_path)
+        for i in range(self.popsize):
+            new_path = self.pick_one()
+            new_path = self.graph.mutate_path(new_path, self.mut_rate)
             news_paths.append(new_path)
 
         self.paths = news_paths
@@ -52,15 +58,38 @@ class Pool:
 
         previus_max = 0
         self.generate_initial_population()
-        print(sum(path.score for path in self.paths))
-        self.normalize_scores()
+
+        print("------first iteration--------")
+        print("total socore: {0}".format(sum(path.score for path in self.paths)))
+        print("scores previus normalization")
+        for path in self.paths:
+            print("path score: {0}".format(path.score))
+
+        self.normalize_scores()               #here i update the self.max value
         self.add_probabilities()
-        while self.max != previus_max:
+        print("max score: {0}".format(self.max))
+        for path in self.paths:
+            print("path score: {0}  / path prop: {1} ".format( path.score, path.prob))
+
+        n = 1
+        while n<3:
             previus_max = self.max
             self.generate_new_population()
-            print(sum(path.score for path in self.paths))
+
+            n += 1
+            print("------ {0} th iteration--------".format(n))
+            print("total socore: {0}".format(sum(path.score for path in self.paths)))
+            print("scores previus normalization")
+            for path in self.paths:
+                print("path score: {0}".format(path.score))
+
             self.normalize_scores()
             self.add_probabilities()
+
+            print("max score: {0}".format(self.max))
+            for path in self.paths:
+                print("path score: {0}  / path prop: {1} ".format( path.score, path.prob))
+
 
 
 
@@ -97,5 +126,5 @@ if __name__ == "__main__":
     region.add_connection("4", "9", 1)
     region.sort_nodes()
 
-    pool = Pool(region, 5, "1", "8")
+    pool = Pool(region, 4, 0.75,  "1", "8")
     pool.run()

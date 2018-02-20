@@ -20,6 +20,8 @@ class Path:
         self.nodes = nodes
         self.score = self.calculate_value()
         self.length = len(nodes)
+        self.normalize_score = None
+        self.prob = None
 
 
     def calculate_value(self):
@@ -29,10 +31,7 @@ class Path:
         return total_score
 
     def normalize(self, max_score):
-        self.score /= max_score
-
-    def get_perturbation_presure(self):
-        return 1 - self.score
+        self.normalize_score = self.score/max_score
 
     def add_probability(self, total_score):
         self.prob = self.score / total_score
@@ -108,13 +107,21 @@ class Graph:
                     return True
             return False
 
-    def mutate_path(self, path):
-        ppresure = path.get_perturbation_presure()
+    def mutate_path(self, path, mut_rate):
+        print("starting mutation with prob path: {0}, score path: {1} normalize score: {2}".format(path.prob, path.score, path.normalize_score))
         i = (path.length)//2 - 1
         start = path.nodes[0].name
         end = path.nodes[-1].name
+
+
+        score = path.normalize_score*mut_rate
+        #print("path prob chosen: {0}".format(path.prob))
+
         while i > 0:
-            if random() > ppresure:
+            r = random()
+            print("iteration {0} random : {1} score : {2}".format(i, r, score))
+            #print("random: {0}, score: {1}".format(r, score))
+            if r > score:
                 new_left = self.get_random_path(start, path.nodes[i].name, visited = path.nodes[i+1:])[::-1]
                 if self.different(new_left, path.nodes[0:i+1]):
                     new_path = Path(new_left + path.nodes[i+1:])
@@ -124,6 +131,7 @@ class Graph:
                     new_path = Path(path.nodes[:i] + new_right)
                     return new_path
             i -= 1
+
         print("fail to find new")
         return path
 
