@@ -44,32 +44,12 @@ class Graph:
     def add_node(self, new_node):
         self.nodes.append(new_node)
 
-    #this function is implemented to use before use binary_search function
-    def sort_nodes(self):
-        self.nodes.sort(key = lambda node: node.name)
 
-    def find_node(self, node_name, bsearch= False):
-        if bsearch:
-            return self.binary_search(node_name, 0, len(self.nodes)-1)
-
+    def find_node(self, node_name):
         for node in self.nodes:
             if node.name == node_name:
                 return node
         return None
-
-    def binary_search(self, node_name, s, e):
-        current_index = (s+e)//2
-        #base cases
-        if node_name == self.nodes[current_index].name:
-            return self.nodes[current_index]
-        elif s >= e:
-            return None
-
-        #Recurrent cases
-        if node_name > self.nodes[current_index].name:
-            return self.binary_search(node_name, current_index + 1, e)
-        elif node_name < self.nodes[current_index].name:
-            return self.binary_search(node_name, s, current_index - 1)
 
     def add_connection(self, node_name1, node_name2, distance):
         node1 = self.find_node(node_name1)
@@ -78,11 +58,11 @@ class Graph:
         node2.add_connection(node1, distance)
 
     #this function get the first random path that see in deep first search
-    def get_random_path(self, start, end, bsearch = False,  visited = []):
-        current = self.find_node(start, bsearch = bsearch)
+    def get_random_path(self, start, end,  visited = []):
+        current = start
         visited.append(current)
 
-        if current.name == end:
+        if current == end:
             return [current]
 
         order = [i for i in range(0, len(current.links))]
@@ -92,7 +72,7 @@ class Graph:
             nb = current.links[i]
             if nb[0] not in visited:
                 visited2 = copy.copy(visited)
-                sub_path = self.get_random_path(nb[0].name, end, bsearch, visited2)
+                sub_path = self.get_random_path(nb[0], end, visited2)
                 if sub_path != None:
                     sub_path.append(current)
                     return sub_path
@@ -110,23 +90,19 @@ class Graph:
     def mutate_path(self, path, mut_rate):
         print("starting mutation with prob path: {0}, score path: {1} normalize score: {2}".format(path.prob, path.score, path.normalize_score))
         i = (path.length)//2 - 1
-        start = path.nodes[0].name
-        end = path.nodes[-1].name
-
-
+        start = path.nodes[0]
+        end = path.nodes[-1]
         score = path.normalize_score*mut_rate
-        #print("path prob chosen: {0}".format(path.prob))
 
         while i > 0:
             r = random()
             print("iteration {0} random : {1} score : {2}".format(i, r, score))
-            #print("random: {0}, score: {1}".format(r, score))
             if r > score:
-                new_left = self.get_random_path(start, path.nodes[i].name, visited = path.nodes[i+1:])[::-1]
+                new_left = self.get_random_path(start, path.nodes[i], visited = path.nodes[i+1:])[::-1]
                 if self.different(new_left, path.nodes[0:i+1]):
                     new_path = Path(new_left + path.nodes[i+1:])
                     return new_path
-                new_right = self.get_random_path(end, path.nodes[i].name, visited = path.nodes[:i])
+                new_right = self.get_random_path(end, path.nodes[i], visited = path.nodes[:i])
                 if self.different(new_right, path.nodes[i:]):
                     new_path = Path(path.nodes[:i] + new_right)
                     return new_path

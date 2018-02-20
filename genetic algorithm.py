@@ -4,19 +4,20 @@ from copy import copy
 
 class Pool:
 
-    def __init__(self, graph, popsize, mut_rate, start, end):
+    def __init__(self, graph, popsize, mut_rate, iterations, start, end):
         self.graph = graph
         self.popsize = popsize
         self.paths = []
-        self.start = start
-        self.end = end
+        self.start = graph.find_node(start)
+        self.end = graph.find_node(end)
         self.mut_rate = mut_rate
+        self.iterations = iterations
         self.solution = None
         self.max = 0
 
     def generate_initial_population(self):
         for i in range(self.popsize):
-            new_path = Path(self.graph.get_random_path(self.start, self.end, bsearch = True))
+            new_path = Path(self.graph.get_random_path(self.start, self.end))
             self.paths.append(new_path)
 
     def normalize_scores(self):
@@ -72,7 +73,7 @@ class Pool:
             print("path score: {0}  / path prop: {1} ".format( path.score, path.prob))
 
         n = 1
-        while n<3:
+        while n<self.iterations:
             previus_max = self.max
             self.generate_new_population()
 
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     region.add_connection("11", "8", 2)
     region.add_connection("4", "6", 3)
     region.add_connection("4", "9", 1)
-    region.sort_nodes()
 
-    pool = Pool(region, 4, 0.75,  "1", "8")
+
+    pool = Pool(region, 4, 0.75, 3, "1", "8")
     pool.run()
